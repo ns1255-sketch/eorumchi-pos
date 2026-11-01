@@ -57,16 +57,23 @@ items.forEach(([n,p])=>{let b=document.createElement('button');b.className='item
 function beep(freq=660,dur=.08){
  try{let A=window.AudioContext||window.webkitAudioContext,c=new A(),o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;o.connect(g);g.connect(c.destination);g.gain.value=.12;o.start();o.stop(c.currentTime+dur)}catch(e){}
 }
-function addItem(n,p){order.push({n,p});beep();render()}
-function removeItem(i){order.splice(i,1);beep(440,.06);render()}
+function addItem(n,p){
+ let x=order.find(v=>v.n===n);
+ if(x) x.qty++; else order.push({n,p,qty:1});
+ beep(660,.08); render()
+}
+function removeItem(i){
+ if(order[i].qty>1) order[i].qty--; else order.splice(i,1);
+ beep(440,.06); render()
+}
 function render(){
  orders.innerHTML=''; let sum=0;
- order.forEach((x,i)=>{sum+=x.p;let d=document.createElement('div');d.className='row';d.innerHTML=x.n+' × 1 <b>'+x.p.toLocaleString()+'원</b>';d.onclick=()=>removeItem(i);orders.appendChild(d)});
+ order.forEach((x,i)=>{sum+=x.p*x.qty;let d=document.createElement('div');d.className='row';d.innerHTML=x.n+' × '+x.qty+' <b>'+(x.p*x.qty).toLocaleString()+'원</b>';d.onclick=()=>removeItem(i);orders.appendChild(d)});
  total.textContent=sum.toLocaleString()+'원';
 }
 function clearOrder(){order=[];beep(350,.1);render()}
 function pay(type){
- let sum=order.reduce((a,x)=>a+x.p,0); if(!sum){alert('주문내역이 없습니다.');return}
+ let sum=order.reduce((a,x)=>a+x.p*x.qty,0); if(!sum){alert('주문내역이 없습니다.');return}
  sales+=sum;localStorage.setItem('eorumchiSales',sales);beep(880,.18);alert(type+' 결제 완료\\n'+sum.toLocaleString()+'원');order=[];render()
 }
 function showSales(){alert('오늘 매출\\n'+sales.toLocaleString()+'원')}
