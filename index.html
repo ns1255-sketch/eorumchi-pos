@@ -1,0 +1,90 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><title>어름치카페 POS</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%;font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;background:#f4f1ed;color:#2e2925;overflow:hidden}
+header{height:58px;background:white;border-bottom:1px solid #ddd;padding:14px 18px;font-size:24px;font-weight:800}
+main{display:flex;height:calc(100% - 58px);padding:10px;gap:10px}.left{width:66%}.right{width:34%;background:white;border-radius:14px;padding:12px;display:flex;flex-direction:column}
+h2{margin:4px 0 10px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.item{height:82px;background:#fff;border:2px solid #d8ccc1;border-radius:13px;font-size:16px;font-weight:800;color:#2568aa}
+.item span{display:block;margin-top:8px;font-size:14px}#lines{flex:1;overflow:auto;border-top:1px solid #eee}
+.line{display:flex;justify-content:space-between;padding:10px 2px;border-bottom:1px solid #eee;font-size:16px}.total{font-size:30px;font-weight:900;text-align:right;padding:8px}
+.decaf{height:58px;width:100%;background:#fff7df;border:2px solid #d8ccc1;border-radius:12px;font-weight:800;color:#2568aa}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.actions button{border:0;border-radius:10px;padding:14px 4px;font-size:16px;font-weight:900}
+.card{background:#bcd5f5}.cash{background:#c9e7c9}.clear{background:#ddd}.sales{background:#f0caca}
+.note{font-size:12px;color:#777;margin-top:7px}
+</style></head><body>
+<header>어름치카페 POS <small style="font-size:13px;font-weight:500">iPad Air 2 호환판</small></header>
+<main><section class="left"><h2>음료 · 빵</h2><div class="grid"><button class="item" onclick="addItem('아메리카노',3500)">아메리카노<span>3,500원</span></button>
+<button class="item" onclick="addItem('카페라떼',4500)">카페라떼<span>4,500원</span></button>
+<button class="item" onclick="addItem('바닐라라떼',4500)">바닐라라떼<span>4,500원</span></button>
+<button class="item" onclick="addItem('카페모카',4500)">카페모카<span>4,500원</span></button>
+<button class="item" onclick="addItem('초코라떼',4500)">초코라떼<span>4,500원</span></button>
+<button class="item" onclick="addItem('흑임자라떼',4500)">흑임자라떼<span>4,500원</span></button>
+<button class="item" onclick="addItem('미숫가루',4500)">미숫가루<span>4,500원</span></button>
+<button class="item" onclick="addItem('딸기라떼',4500)">딸기라떼<span>4,500원</span></button>
+<button class="item" onclick="addItem('망고라떼',4500)">망고라떼<span>4,500원</span></button>
+<button class="item" onclick="addItem('스무디',4500)">스무디<span>4,500원</span></button>
+<button class="item" onclick="addItem('에이드',4500)">에이드<span>4,500원</span></button>
+<button class="item" onclick="addItem('병음료',4500)">병음료<span>4,500원</span></button>
+<button class="item" onclick="addItem('유자차',4500)">유자차<span>4,500원</span></button>
+<button class="item" onclick="addItem('자몽차',4500)">자몽차<span>4,500원</span></button>
+<button class="item" onclick="addItem('레몬차',4500)">레몬차<span>4,500원</span></button>
+<button class="item" onclick="addItem('캐모마일(유기농)',3500)">캐모마일(유기농)<span>3,500원</span></button>
+<button class="item" onclick="addItem('루이보스(유기농)',3500)">루이보스(유기농)<span>3,500원</span></button>
+<button class="item" onclick="addItem('빵',3000)">빵<span>3,000원</span></button></div>
+<div class="note">※ 주문내역 항목을 누르면 1개씩 취소됩니다.</div></section>
+<aside class="right"><h2>주문내역</h2><div id="lines"></div>
+<button class="decaf" onclick="addItem('디카페인 추가',500)">디카페인 +500원</button>
+<div class="total" id="total">0원</div>
+<div class="actions"><button class="card" onclick="pay('카드')">카드 결제</button><button class="cash" onclick="pay('현금')">현금 결제</button>
+<button class="clear" onclick="clearCart()">전체 취소</button><button class="sales" onclick="todaySales()">오늘 매출</button></div></aside></main>
+<script>
+var cart=[];
+var audioCtx=null;
+function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,",")+"원";}
+function beep(freq,dur,vol,type){
+ try{
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==="suspended") audioCtx.resume();
+  var o=audioCtx.createOscillator(); var g=audioCtx.createGain();
+  o.type=type||"square"; o.frequency.value=freq; g.gain.value=vol;
+  o.connect(g); g.connect(audioCtx.destination); o.start(0);
+  g.gain.setValueAtTime(vol,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+  o.stop(audioCtx.currentTime+dur);
+ }catch(e){}
+}
+function tapSound(){beep(1050,.04,.05,"square");}
+function successSound(){beep(700,.10,.10,"sine");setTimeout(function(){beep(980,.12,.12,"sine");},100);setTimeout(function(){beep(1320,.20,.14,"sine");},220);}
+function addItem(name,price){
+ tapSound();
+ var found=-1; var i;
+ for(i=0;i<cart.length;i++){if(cart[i].name===name && cart[i].price===price){found=i;break;}}
+ if(found>=0) cart[found].qty=cart[found].qty+1;
+ else cart.push({name:name,price:price,qty:1});
+ render();
+}
+function removeItem(i){tapSound();cart[i].qty=cart[i].qty-1;if(cart[i].qty<=0)cart.splice(i,1);render();}
+function render(){
+ var h=""; var total=0; var i,x;
+ for(i=0;i<cart.length;i++){x=cart[i];total+=x.price*x.qty;h+='<div class="line" onclick="removeItem('+i+')"><span>'+x.name+' × '+x.qty+'</span><b>'+fmt(x.price*x.qty)+'</b></div>';}
+ document.getElementById("lines").innerHTML=h;document.getElementById("total").innerHTML=fmt(total);
+}
+function clearCart(){tapSound();cart=[];render();}
+function pay(type){
+ var total=0,i;for(i=0;i<cart.length;i++)total+=cart[i].price*cart[i].qty;
+ if(total===0){alert("주문이 없습니다.");return;}
+ var sales=[];try{sales=JSON.parse(localStorage.getItem("eorumchi_sales")||"[]");}catch(e){sales=[];}
+ sales.push({time:(new Date()).getTime(),type:type,total:total});
+ try{localStorage.setItem("eorumchi_sales",JSON.stringify(sales));}catch(e){}
+ successSound();alert(type+" "+fmt(total)+" 결제 기록 완료\n※ 실제 카드단말기 승인 연동 전 단계입니다.");cart=[];render();
+}
+function todaySales(){
+ tapSound();var sales=[];try{sales=JSON.parse(localStorage.getItem("eorumchi_sales")||"[]");}catch(e){sales=[];}
+ var now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),card=0,cash=0,cnt=0,i;
+ for(i=0;i<sales.length;i++){if(sales[i].time>=start){cnt++;if(sales[i].type==="카드")card+=sales[i].total;else cash+=sales[i].total;}}
+ alert("오늘 "+cnt+"건\n카드 "+fmt(card)+"\n현금 "+fmt(cash)+"\n총매출 "+fmt(card+cash));
+}
+render();
+</script></body></html>
